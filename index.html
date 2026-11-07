@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>报销侠 | 帮财务把每个报销周期压到 1.9 天</title>
+<meta name="description" content="报销侠替财务看每一张发票：识别、查验、拦重票、自动对账。给 300 人以内的团队用，14 天全功能免费试用，不用绑卡。">
+<meta property="og:title" content="报销这件事，从 6.8 天压到 1.9 天">
+<meta property="og:description" content="给 300 人以内的团队用的自动报销系统。14 天全功能免费试用，不绑卡。">
+<meta property="og:image" content="https://baoxiaoxia.example/og-cover-2026.png">
+<meta property="og:type" content="website">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "查验为什么准？ axiom", "acceptedAnswer": {"@type": "Answer", "text": "专票和普票对接全联查验，票号、税号、开票日逐一核对，对不上的当场拦截。"}},
+    {"@type": "Question", "name": "要改现在的报销流程吗？", "acceptedAnswer": {"@type": "Answer", "text": "不改。审批人还是现在的 Leader，只是把填单从邮件和群消息换成拍票上传。"}},
+    {"@type": "Question", "name": "对接哪些财务软件？", "acceptedAnswer": {"@type": "Answer", "text": "金蝶云星空、金蝶 KIS、用友 U8 月底可导出已核对平的凭证批次。"}},
+    {"@type": "Question", "name": "怎么收费？", "acceptedAnswer": {"@type": "Answer", "text": "¥33 每人每月，按年付送两个月。查验次数不额外收费。"}}
+  ]
+}
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/manrope@5/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/chinese-simplified-400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/chinese-simplified-500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/chinese-simplified-600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/chinese-simplified-700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23121212'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='white' font-family='sans-serif'%3E报%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<style>
+  :root { --curve: cubic-bezier(0.22, 1, 0.36, 1); }
+  html { font-family: Manrope, "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; scroll-behavior: smooth; }
+  h1, h2, h3 { text-wrap: balance; }
+  p, li, summary, blockquote, dt, dd { text-wrap: pretty; }
+
+  ::selection { background: #272727; }
+  :focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; border-radius: 8px; }
+
+  .skip { position: absolute; left: -9999px; top: 24px; z-index: 100; padding: 8px 12px; background: #272727; color: #FFFFFF; border-radius: 8px; }
+  .skip:focus { left: 24px; }
+
+  .grad-head { background: linear-gradient(90deg, #FFFFFF 0%, #9B9B9B 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background-color 0.3s var(--curve), transform 0.5s var(--curve), opacity 0.3s var(--curve); }
+  .btn:active { transform: scale(0.98) translateY(1px); }
+  .btn-primary { background: #FFFFFF; color: #000000; padding: 8px 12px; font-size: 16px; }
+  .btn-primary:hover { background: #E8E8E8; }
+  .btn-ghost { background: transparent; color: #9B9B9B; padding: 8px 12px; font-size: 14px; }
+  .btn-ghost:hover { color: #FFFFFF; }
+
+  /* Chips */
+  .chip { display: inline-flex; align-items: center; gap: 4px; border-radius: 9999px; font-size: 12px; line-height: 16px; font-weight: 600; padding: 2px 8px; }
+
+  /* Cards */
+  .card { background: #1F1F1F; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
+  .card-inner { background: #181818; border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; }
+
+  /* Skeleton (loading state): flat blocks, opacity pulse only */
+  .sk { background: #272727; border-radius: 8px; animation: skpulse 1.8s var(--curve) infinite; }
+  @keyframes skpulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.75; } }
+
+  /* Scroll reveal */
+  .reveal { opacity: 0; transform: translateY(32px); transition: opacity 0.7s var(--curve), transform 0.7s var(--curve); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* Tagline word reveal */
+  .word { opacity: 0.3; transition: opacity 0.5s var(--curve); }
+  .word.lit { opacity: 1; }
+
+  /* FAQ */
+  details.faq { border-bottom: 1px solid rgba(255,255,255,0.08); }
+  details.faq summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 24px 0; font-size: 18px; line-height: 28px; font-weight: 600; transition: color 0.3s var(--curve); }
+  details.faq summary:hover { color: #9B9B9B; }
+  details.faq .ph-plus { transition: transform 0.5s var(--curve); flex: none; }
+  details[open].faq .ph-plus { transform: rotate(45deg); }
+  details.faq .ans > div { overflow: hidden; }
+  details.faq .ans p { opacity: 0; transform: translateY(8px); transition: opacity 0.5s var(--curve), transform 0.5s var(--curve); }
+  details.faq.opened .ans p { opacity: 1; transform: none; }
+
+  /* Mobile menu */
+  .panel { position: fixed; inset: 0; z-index: 60; background: rgba(24,24,24,0.92); backdrop-filter: blur(16px); opacity: 0; pointer-events: none; transition: opacity 0.5s var(--curve); }
+  .panel.open { opacity: 1; pointer-events: auto; }
+  .panel .item { opacity: 0; transform: translateY(24px); transition: opacity 0.5s var(--curve), transform 0.5s var(--curve); }
+  .panel.open .item { opacity: 1; transform: none; }
+  .bar { position: absolute; width: 24px; height: 2px; background: #FFFFFF; border-radius: 2px; transition: transform 0.5s var(--curve); left: 0; }
+  .bar-a { top: -4px; }
+  .bar-b { top: 4px; }
+  .burger.open .bar-a { transform: rotate(45deg) translate(0, 4px); }
+  .burger.open .bar-b { transform: rotate(-45deg) translate(0, -4px); }
+
+  /* Dialogs */
+  dialog { margin: auto; background: #1F1F1F; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; width: min(92vw, 440px); opacity: 0; transform: scale(0.98) translateY(8px); transition: opacity 0.5s var(--curve), transform 0.5s var(--curve), overlay 0.5s var(--curve), display 0.5s var(--curve); }
+  dialog[open] { opacity: 1; transform: none; }
+  dialog::backdrop { background: rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.5s var(--curve); }
+  dialog[open]::backdrop { opacity: 1; }
+
+  .field { width: 100%; background: #181818; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; font-size: 16px; color: #FFFFFF; transition: border-color 0.3s var(--curve); }
+  .field:focus { border-color: #9B9B9B; outline: none; }
+  .err { color: #E5484D; font-size: 14px; line-height: 20px; font-weight: 500; display: none; }
+  .show-err .err { display: block; }
+
+  #authForm.loading .live, #authForm.done .live { display: none; }
+  #authForm.loading .skel, #authForm.done .fin { display: block; }
+  .skel, .fin { display: none; }
+
+  /* 3D 视差场景（只动 transform 与 opacity） */
+  .scene { perspective: 1400px; }
+  .float { transform-style: preserve-3d; animation: bob 7s var(--curve) infinite; }
+  .tilt { position: relative; transform-style: preserve-3d; transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); will-change: transform; }
+  .ghost { position: absolute; inset: 0; background: #1F1F1F; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; transform: translateZ(-48px) scale(0.98); opacity: 0.35; }
+  .ghost.g2 { transform: translateZ(-96px) scale(0.96); opacity: 0.2; }
+  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+
+  /* 客户栏无限滚动：transform 环回，速度恒定 */
+  .mq { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 64px, #000 calc(100% - 64px), transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 64px, #000 calc(100% - 64px), transparent); }
+  .mq-track { display: flex; width: max-content; animation: mq 28s linear infinite; }
+  .mq ul { display: flex; align-items: center; gap: 40px; padding-right: 40px; }
+  @keyframes mq { to { transform: translateX(-50%); } }
+
+  /* 关键数字逐位入场 */
+  .d { display: inline-block; opacity: 0; transform: translateY(0.35em); transition: opacity 0.5s var(--curve), transform 0.5s var(--curve); transition-delay: calc(var(--i) * 60ms); }
+  .reveal.in .d { opacity: 1; transform: none; }
+
+  /* 卡片悬浮抬升 */
+  .lift { transition: transform 0.5s var(--curve); }
+  .lift:hover { transform: translateY(-4px); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal, .word, .panel, .panel .item, .bar, .btn, details.faq .ph-plus, dialog, dialog::backdrop, .d, .lift { transition: none !important; }
+    .reveal, .tilt, .lift:hover { transform: none !important; }
+    .float, .mq-track, .sk { animation: none !important; }
+    .sk { opacity: 0.5; }
+    .d { opacity: 1; transform: none; }
+    .lift:hover { transform: none; }
+  }
+</style>
+</head>
+<body class="bg-[#000000] text-white antialiased">
+<a class="skip" href="#main">跳到正文</a>
+
+<!-- 浮动导航 -->
+<nav aria-label="主导航" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-6 rounded-2xl border border-white/10 bg-[#181818]/80 px-4 py-2 backdrop-blur">
+  <a href="#main" class="flex items-center gap-2 font-semibold">
+    <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-white text-black text-xs">报</span>
+    <span class="text-sm">报销侠</span>
+  </a>
+  <a href="#voices" class="hidden text-sm font-semibold text-[#9B9B9B] transition-colors duration-300 hover:text-white sm:block">客户实例</a>
+  <a href="#faq" class="hidden text-sm font-semibold text-[#9B9B9B] transition-colors duration-300 hover:text-white sm:block">常见问题</a>
+  <span aria-hidden="true" class="hidden text-white/10 sm:block">|</span>
+  <button class="burger relative ml-2 inline-flex h-10 w-6 items-center justify-center sm:hidden" aria-expanded="false" aria-controls="mnav" id="burger">
+    <span class="bar bar-a"></span><span class="bar bar-b"></span>
+    <span class="sr-only">菜单</span>
+  </button>
+</nav>
+
+<!-- 移动端全高菜单 -->
+<div id="mnav" class="panel flex flex-col justify-center gap-8 px-6">
+  <a class="item text-3xl font-semibold border-b-2 border-white pb-1" style="transition-delay: 0ms" aria-current="page" href="#main">产品</a>
+  <a class="item text-3xl font-semibold" style="transition-delay: 60ms" href="#voices">客户实例</a>
+  <a class="item text-3xl font-semibold" style="transition-delay: 120ms" href="#faq">常见问题</a>
+  <button class="item btn btn-primary w-fit" style="transition-delay: 180ms" data-open="auth">开始 14 天免费试用</button>
+  <a class="item text-3xl font-semibold text-[#9B9B9B]" style="transition-delay: 240ms" href="mailto:hi@baoxiaoxia.cn">联系我们</a>
+</div>
+
+<main id="main">
+  <!-- 首屏 -->
+  <section class="px-4 pt-24 pb-16 md:px-6 md:py-24">
+    <div class="mx-auto grid max-w-5xl items-center gap-12 lg:grid-cols-2 lg:gap-8">
+      <div class="max-w-[680px]">
+        <h1 class="grad-head text-5xl font-bold md:text-6xl">报销这件事<br>从 <span class="whitespace-nowrap">6.8 天</span><br>压到 <span class="whitespace-nowrap">1.9 天</span></h1>
+        <p class="mt-6 max-w-[680px] text-lg text-[#9B9B9B]">报销侠替财务看每一张发票：识别、查验、拦重票、自动对账，做完再送到审批人手上。给 300 人以内的团队用。</p>
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <button class="btn btn-primary" data-open="auth">开始 14 天免费试用<i class="ph-fill ph-arrow-right" aria-hidden="true"></i></button>
+        </div>
+        <p class="mt-4 text-sm text-[#9B9B9B]">不绑卡。到期自动停，数据保留 90 天，随时导出。</p>
+      </div>
+
+      <!-- 产品示意（3D 场景：悬浮呼吸 + 鼠标倾斜 + 双层景深） -->
+      <div class="scene">
+        <div class="float">
+          <div id="tilt3d" class="tilt">
+            <div class="ghost" aria-hidden="true"></div>
+            <div class="ghost g2" aria-hidden="true"></div>
+            <div role="img" aria-label="报销侠审批界面截图：四张待审发票卡。一张高铁票自动通过，一张餐饮票查验失败并给出原因，一张住宿票处于识别中，底部提示一张重复票据被拦截" class="card p-3 lg:p-4">
+              <div aria-hidden="true" class="space-y-2">
+          <div class="card-inner p-3">
+            <div class="flex items-center justify-between gap-4">
+              <span class="text-sm font-semibold">高铁票 兰州西到西安北</span>
+              <span class="chip bg-[#272727] text-[#9B9B9B]">¥ 217.5</span>
+            </div>
+            <p class="mt-2 text-sm text-[#9B9B9B]">审批人 周柏文 · 走差旅单</p>
+            <span class="chip mt-2 bg-[#272727] text-white"><i class="ph ph-check" style="font-size:12px"></i>自动通过</span>
+          </div>
+          <div class="card-inner p-3">
+            <div class="flex items-center justify-between gap-4">
+              <span class="text-sm font-semibold">餐饮票 朴食小馆</span>
+              <span class="chip bg-[#272727] text-[#9B9B9B]">¥ 139.8</span>
+            </div>
+            <p class="text-sm text-[#E5484D]">查验失败。号码尾数与全联返回不一致，请重新扫描原件。</p>
+          </div>
+          <div class="card-inner p-3">
+            <div class="flex items-center justify-between gap-4">
+              <span class="text-sm font-semibold">住宿票 栖麓民宿</span>
+              <div class="sk h-5 w-12"></div>
+            </div>
+            <div class="sk mt-2 h-4 w-2/3"></div>
+          </div>
+          <div class="rounded-lg bg-[#272727] p-3">
+            <div class="flex items-center gap-2 text-sm font-semibold"><i class="ph ph-copy" style="font-size:16px"></i>重复票据已拦</div>
+            <p class="mt-1 text-sm text-[#9B9B9B]">与 9 月 11 日已入账单据相同，金额 469.5。</p>
+          </div>
+        </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 信任信号 -->
+    <div class="reveal mx-auto mt-12 max-w-5xl">
+      <p class="text-center text-sm text-[#9B9B9B]">这些公司的财务在用报销侠 · 每月 <span aria-label="47.2"><span aria-hidden="true" class="d" style="--i:0">4</span><span aria-hidden="true" class="d" style="--i:1">7</span><span aria-hidden="true" class="d" style="--i:2">.2</span></span> 万张发票</p>
+      <div class="mq mt-4">
+        <div class="mq-track">
+          <ul class="text-sm font-semibold text-[#9B9B9B]"><li>小象出行</li><li>拾味餐饮</li><li>楠溪民宿</li><li>橙程物流</li><li>锦橙科技</li></ul>
+          <ul aria-hidden="true" class="text-sm font-semibold text-[#9B9B9B]"><li>小象出行</li><li>拾味餐饮</li><li>楠溪民宿</li><li>橙程物流</li><li>锦橙科技</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- B11 强制：标句逐词亮起 -->
+  <section class="reveal px-4 py-16 md:px-6 md:py-24">
+    <h2 id="tagline" class="grad-head mx-auto max-w-[680px] text-5xl font-bold md:text-6xl">
+      <span class="word">让</span><span class="word">每</span><span class="word">一</span><span class="word">张</span><span class="word">发</span><span class="word">票</span><span class="word">，</span><br><span class="word">都</span><span class="word">在</span><span class="word">当</span><span class="word">天</span><span class="word">结</span><span class="word">清</span><span class="word">。</span>
+    </h2>
+  </section>
+
+  <!-- 利益点 -->
+  <section class="reveal px-4 py-16 md:px-6 md:py-24">
+    <div class="mx-auto max-w-5xl">
+      <h2 class="max-w-[680px] text-4xl font-bold">四个不再发生的动作</h2>
+      <div class="mt-12 grid gap-6 sm:grid-cols-2">
+        <article class="card lift p-6">
+          <i class="ph ph-magnifying-glass text-3xl" aria-hidden="true"></i>
+          <h3 class="mt-4 text-2xl font-semibold">发票自动查验</h3>
+          <p class="mt-2 text-[#9B9B9B]">对接全联查验，票号、税号、开票日逐一核对，不占财务一天一秒。9 月共查验 41.7 万张。</p>
+        </article>
+        <article class="card lift p-6">
+          <i class="ph ph-copy text-3xl" aria-hidden="true"></i>
+          <h3 class="mt-4 text-2xl font-semibold">假票重票当场拦</h3>
+          <p class="mt-2 text-[#9B9B9B]">已入账的票再上传，提交界面当场标红，不等到月度对账。全年拦下了 2,417 张。</p>
+        </article>
+        <article class="card lift p-6">
+          <i class="ph ph-bell-ringing text-3xl" aria-hidden="true"></i>
+          <h3 class="mt-4 text-2xl font-semibold">审批不用催</h3>
+          <p class="mt-2 text-[#9B9B9B]">单据到谁，企业微信直接提醒。审批平均延迟 11 分钟，不是玩笑的 11 分钟。</p>
+        </article>
+        <article class="card lift p-6">
+          <i class="ph ph-scales text-3xl" aria-hidden="true"></i>
+          <h3 class="mt-4 text-2xl font-semibold">月底账目自动对平</h3>
+          <p class="mt-2 text-[#9B9B9B]">一键导出已核对平的凭证批次进金蝶云星空或用友 U8，Excel 比对这一步省掉。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 三步流程 -->
+  <section class="reveal px-4 py-16 md:px-6 md:py-24">
+    <div class="mx-auto max-w-5xl">
+      <h2 class="max-w-[680px] text-4xl font-bold">三个步骤，人人都会</h2>
+      <div class="mt-12 grid gap-6 md:grid-cols-3">
+        <article class="card lift p-6">
+          <span class="text-4xl font-bold text-[#9B9B9B]">01</span>
+          <h3 class="mt-4 text-2xl font-semibold">拍票上传</h3>
+          <p class="mt-2 text-[#9B9B9B]">员工拿手机扫一张票，抬头、税号、金额自动进单据。</p>
+        </article>
+        <article class="card lift p-6">
+          <span class="text-4xl font-bold text-[#9B9B9B]">02</span>
+          <h3 class="mt-4 text-2xl font-semibold">规则引擎审单</h3>
+          <p class="mt-2 text-[#9B9B9B]">查验、查重、比对差旅标准，自动给结论，不靠人情判断。</p>
+        </article>
+        <article class="card lift p-6">
+          <span class="text-4xl font-bold text-[#9B9B9B]">03</span>
+          <h3 class="mt-4 text-2xl font-semibold">一键入财务系统</h3>
+          <p class="mt-2 text-[#9B9B9B]">月度凭证批次推到金蝶云星空或用友 U8，签名齐全再走账。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 社会证明 -->
+  <section id="voices" class="reveal px-4 py-16 md:px-6 md:py-24">
+    <div class="mx-auto max-w-5xl">
+      <h2 class="max-w-[680px] text-4xl font-bold">讲不出细节的产品，直接听用户</h2>
+      <div class="mt-12 grid gap-6 md:grid-cols-3">
+        <article class="card lift p-6">
+          <blockquote class="text-[#FFFFFF]">“以前月底对单要三个晚上，现在凭证批次直接进金蝶，核对就是走一遍。”</blockquote>
+          <div class="mt-4 flex items-center gap-4">
+            <span aria-hidden="true" class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#272727] font-semibold">周</span>
+            <div><p class="text-sm font-semibold">周慧琳 · 财务经理</p><p class="text-sm text-[#9B9B9B]">杭州锦橙科技</p></div>
+          </div>
+        </article>
+        <article class="card lift p-6">
+          <blockquote class="text-[#FFFFFF]">“重票当场拦住了。9 月拦了 23 张，一张都没过。”</blockquote>
+          <div class="mt-4 flex items-center gap-4">
+            <span aria-hidden="true" class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#272727] font-semibold">陈</span>
+            <div><p class="text-sm font-semibold">陈立群 · 财务总监</p><p class="text-sm text-[#9B9B9B]">成都拾味餐饮</p></div>
+          </div>
+        </article>
+        <article class="card lift p-6">
+          <blockquote class="text-[#FFFFFF]">“员工自己能看到进度，催问从一天十几条降到两三条。”</blockquote>
+          <div class="mt-4 flex items-center gap-4">
+            <span aria-hidden="true" class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#272727] font-semibold">吴</span>
+            <div><p class="text-sm font-semibold">吴雅婷 · 行政主管</p><p class="text-sm text-[#9B9B9B]">深圳小象出行</p></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="reveal px-4 py-16 md:px-6 md:py-24">
+    <div class="mx-auto max-w-[680px]">
+      <h2 class="text-4xl font-bold">先把疑问摆到台面上</h2>
+      <div class="mt-12">
+        <details class="faq">
+          <summary>查验为什么准<i class="ph ph-plus text-xl" aria-hidden="true"></i></summary>
+          <div class="ans"><div><p class="pb-6 text-[#9B9B9B]">专票和普票对接全联查验，票号、税号、开票日逐一核对，对不上的当场拦截。查验结果带全联的单件回执，不是系统自己猜的。</p></div></div>
+        </details>
+        <details class="faq">
+          <summary>要改现在的报销流程吗<i class="ph ph-plus text-xl" aria-hidden="true"></i></summary>
+          <div class="ans"><div><p class="pb-6 text-[#9B9B9B]">不改。审批人还是现在的 Leader，几级就几级，只是填单从邮件和群消息换成拍票上传。上线第一天就能用。</p></div></div>
+        </details>
+        <details class="faq">
+          <summary>对接金蝶和用友吗<i class="ph ph-plus text-xl" aria-hidden="true"></i></summary>
+          <div class="ans"><div><p class="pb-6 text-[#9B9B9B]">支持金蝶云星空、金蝶 KIS 和用友 U8。月底可导出已核对平的凭证批次，差旅单与凭证逐笔对应，不再靠人工对 Excel。</p></div></div>
+        </details>
+        <details class="faq">
+          <summary>手写的出租车票也能识吗<i class="ph ph-plus text-xl" aria-hidden="true"></i></summary>
+          <div class="ans"><div><p class="pb-6 text-[#9B9B9B]">手写票据走人工复核，识别率 92.7%。系统不敢说全对，错一张财务当场改，不会算错金额。</p></div></div>
+        </details>
+        <details class="faq">
+          <summary>数据存哪，安全吗<i class="ph ph-plus text-xl" aria-hidden="true"></i></summary>
+          <div class="ans"><div><p class="pb-6 text-[#9B9B9B]">数据存阿里云杭州，通过等保三级。传输全程 TLS，员工离职后数据自动封存，审计日志保留三年。</p></div></div>
+        </details>
+        <details class="faq">
+          <summary>到期不续费，数据怎么办<i class="ph ph-plus text-xl" aria-hidden="true"></i></summary>
+          <div class="ans"><div><p class="pb-6 text-[#9B9B9B]">试用和正式版都能一键导出全部历史单据，CSV 与 PDF。退出去就不再收费，数据保留 90 天。</p></div></div>
+        </details>
+        <details class="faq">
+          <summary>怎么收费<i class="ph ph-plus text-xl" aria-hidden="true"></i></summary>
+          <div class="ans"><div><p class="pb-6 text-[#9B9B9B]">¥33 每人每月，按年付送两个月。发票查验和凭证导出都包含在内，不额外按张收费。</p></div></div>
+        </details>
+        <details class="faq">
+          <summary>试用结束前会不会突然收费<i class="ph ph-plus text-xl" aria-hidden="true"></i></summary>
+          <div class="ans"><div><p class="pb-6 text-[#9B9B9B]">第 13 天，系统在企业微信发一条提醒，不绑卡就不会产生扣费。试用结束自动降级为只读档案，随时导出。</p></div></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- 收尾 CTA -->
+  <section id="cta" class="reveal px-4 py-16 md:px-6 md:py-24">
+    <div class="mx-auto max-w-[680px] text-center">
+      <h2 class="grad-head text-4xl font-bold md:text-5xl">把这周剩下的事，还给你的团队</h2>
+      <p class="mt-6 text-lg text-[#9B9B9B]">14 天全功能试用，不用绑卡。到期自动停，数据随时带走。</p>
+      <div class="mt-8"><button class="btn btn-primary" data-open="auth">开始 14 天免费试用<i class="ph-fill ph-arrow-right" aria-hidden="true"></i></button></div>
+      <p class="mt-4 text-sm text-[#9B9B9B]">需要合规材料？我们 24 小时内把等保和备案文件发给你。</p>
+    </div>
+  </section>
+</main>
+
+<footer class="border-t border-white/8 px-4 py-12 md:px-6">
+  <div class="mx-auto flex max-w-5xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
+    <p class="flex items-center gap-2 font-semibold"><span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-white text-black text-xs">报</span><span class="text-sm">报销侠</span></p>
+    <nav class="flex gap-4 text-sm text-[#9B9B9B]" aria-label="法律">
+      <button class="transition-colors duration-300 hover:text-white" data-legal="privacy">隐私政策</button>
+      <button class="transition-colors duration-300 hover:text-white" data-legal="terms">服务条款</button>
+      <a class="mail" href="mailto:hi@baoxiaoxia.cn">hi@baoxiaoxia.cn</a>
+    </nav>
+    <p class="text-xs text-[#9B9B9B]">© 2026 报销侠 · 京ICP备20261472 号（演示文案，上线前以正式备案为准）</p>
+  </div>
+</footer>
+
+<!-- Cookie 条 -->
+<div id="cookie" class="fixed bottom-4 left-4 right-4 z-40 flex flex-col gap-4 card p-4 md:left-auto md:max-w-[420px]">
+  <p class="text-sm text-[#9B9B9B]">本站使用 Cookie 记录访问量，仅在浏览器里存一个访问标识，不清除也不跟踪你。</p>
+  <div class="flex gap-2">
+    <button class="btn btn-ghost" id="cookieNo">仅必要</button>
+    <button class="btn btn-primary text-sm!" id="cookieYes">同意</button>
+  </div>
+</div>
+
+<!-- 试用注册弹窗 -->
+<dialog id="auth" aria-labelledby="authTitle">
+  <h2 id="authTitle" class="text-3xl font-bold">开始 14 天免费试用</h2>
+  <p class="mt-2 text-sm text-[#9B9B9B]">只需企业邮箱，我们只发开通邮件，不发广告。</p>
+  <form id="authForm" class="mt-6 space-y-4" novalidate>
+    <div class="live">
+      <label for="email" class="block text-sm font-semibold">企业邮箱</label>
+      <input id="email" name="email" type="email" class="field mt-2" placeholder="finance@company.com" autocomplete="email">
+      <p class="err mt-2">请填写企业邮箱。示例 finance@company.com</p>
+      <button type="submit" class="btn btn-primary mt-4 w-full justify-center">开通试用账号</button>
+    </div>
+    <div class="skel space-y-2" aria-hidden="true">
+      <div class="sk h-4 w-1/3"></div>
+      <div class="sk h-10 w-full"></div>
+      <div class="sk h-4 w-2/3"></div>
+      <div class="sk h-10 w-full"></div>
+    </div>
+    <div class="fin" role="status">
+      <p class="flex items-center gap-2 font-semibold"><i class="ph-fill ph-check-circle text-xl" aria-hidden="true"></i>邀请邮件已发送。</p>
+      <p class="mt-2 text-sm text-[#9B9B9B]">没收到，先查看垃圾邮件文件夹。链接 30 分钟后过期，回来重新提交即可。</p>
+      <button type="button" class="btn btn-ghost mt-4" data-close="auth">关闭</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 法律弹窗 -->
+<dialog id="legal" aria-labelledby="legalTitle">
+  <h2 id="legalTitle" class="text-2xl font-bold">隐私政策</h2>
+  <p id="legalBody" class="mt-4 text-sm text-[#9B9B9B]"></p>
+  <button class="btn btn-ghost mt-4" data-close="legal">知道了</button>
+</dialog>
+
+<script>
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Scroll reveal (once)
+  const io = new IntersectionObserver((es) => {
+    for (const e of es) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }, { threshold: 0.2 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // FAQ 展开淡入：details 首次渲染不触发过渡，手动重排后再加类
+  document.querySelectorAll('details.faq').forEach(d => d.addEventListener('toggle', () => {
+    if (d.open) { d.classList.remove('opened'); void d.offsetWidth; d.classList.add('opened'); }
+    else { d.classList.remove('opened'); }
+  }));
+
+  // Tagline word by word
+  const wio = new IntersectionObserver((es) => {
+    for (const e of es) if (e.isIntersecting) { e.target.classList.add('lit'); wio.unobserve(e.target); }
+  }, { rootMargin: '-35% 0px -40% 0px', threshold: 0 });
+  document.querySelectorAll('.word').forEach((w, i) => { w.style.transitionDelay = Math.min(i * 60, 400) + 'ms'; reduce ? w.classList.add('lit') : wio.observe(w); });
+
+  // Mobile menu
+  const burger = document.getElementById('burger');
+  const panel = document.getElementById('mnav');
+  burger.addEventListener('click', () => {
+    const open = panel.classList.toggle('open');
+    burger.classList.toggle('open', open);
+    burger.setAttribute('aria-expanded', open);
+  });
+  panel.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { panel.classList.remove('open'); burger.classList.remove('open'); burger.setAttribute('aria-expanded', 'false'); }));
+
+  // Dialog helpers
+  const auth = document.getElementById('auth');
+  const legal = document.getElementById('legal');
+  document.querySelectorAll('[data-open="auth"]').forEach(b => b.addEventListener('click', () => {
+    panel.classList.remove('open');
+    burger.classList.remove('open');
+    burger.setAttribute('aria-expanded', 'false');
+    auth.showModal();
+  }));
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => document.getElementById(b.dataset.close)?.close()));
+
+  const legalKeys = {
+    privacy: ['隐私政策（演示摘要）', '本演示页不设埋点，不收任何个人数据。正式版只记录注册邮箱与访问日志，保留 180 天，随时申请删除。合同与发票数据仅用于你自己的报销流程，不作它用。'],
+    terms: ['服务条款（演示摘要）', '发票数据所有权始终属于客户。我们承诺不将你的单据用于模型训练或对外展示。服务中断累计超过 24 小时，当月费用全免。']
+  };
+  document.querySelectorAll('[data-legal]').forEach(b => b.addEventListener('click', () => {
+    const [t, body] = legalKeys[b.dataset.legal];
+    document.getElementById('legalTitle').textContent = t;
+    document.getElementById('legalBody').textContent = body;
+    legal.showModal();
+  }));
+
+  // Form: validate -> loading skeleton -> specific confirm
+  const form = document.getElementById('authForm');
+  const email = document.getElementById('email');
+  const wrap = email.closest('.live');
+  const reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  wrap.addEventListener('input', () => wrap.classList.remove('show-err'));
+  form.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    if (!reEmail.test(email.value.trim())) { wrap.classList.add('show-err'); email.focus(); return; }
+    form.classList.add('loading');
+    setTimeout(() => {
+      form.classList.remove('loading');
+      form.classList.add('done');
+    }, 1200);
+  });
+
+  // 3D 视差倾斜：rAF 阻尼插值，不使用滚动监听
+  const scene = document.querySelector('.scene');
+  const tiltEl = document.getElementById('tilt3d');
+  if (scene && tiltEl && !reduce) {
+    let targetX = 0, targetY = 0, curX = 0, curY = 0, rafId = 0;
+    const loop = () => {
+      curX += (targetX - curX) * 0.1;
+      curY += (targetY - curY) * 0.1;
+      tiltEl.style.setProperty('--rx', curX.toFixed(3) + 'deg');
+      tiltEl.style.setProperty('--ry', curY.toFixed(3) + 'deg');
+      if (Math.abs(targetX - curX) > 0.02 || Math.abs(targetY - curY) > 0.02) rafId = requestAnimationFrame(loop);
+      else rafId = 0;
+    };
+    const kick = () => { if (!rafId) rafId = requestAnimationFrame(loop); };
+    scene.addEventListener('pointermove', (e) => {
+      const r = tiltEl.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5;
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      targetX = py * -8; targetY = px * 10; kick();
+    });
+    scene.addEventListener('pointerleave', () => { targetX = 0; targetY = 0; kick(); });
+  }
+
+  // Cookie notice
+  const cookie = document.getElementById('cookie');
+  if (localStorage.getItem('bx-cookie')) cookie.remove();
+  document.getElementById('cookieYes').addEventListener('click', () => { localStorage.setItem('bx-cookie', 'all'); cookie.remove(); });
+  document.getElementById('cookieNo').addEventListener('click', () => { localStorage.setItem('bx-cookie', 'none'); cookie.remove(); });
+</script>
+</body>
+</html>
